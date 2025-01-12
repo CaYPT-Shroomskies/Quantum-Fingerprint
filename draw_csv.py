@@ -7,7 +7,7 @@ import sys
 arr = []
 with open(sys.argv[1], newline='') as csvfile:
 
-    reader = csv.reader(csvfile, delimiter='\t', quotechar='|')
+    reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
     for row in reader:
         arr.append(row)
