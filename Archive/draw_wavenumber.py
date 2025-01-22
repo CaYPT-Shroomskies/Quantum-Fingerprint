@@ -41,5 +41,5 @@ ax.ticklabel_format(useOffset=False, style='plain')
 
 ax.fill_between(arr[:,0],arr[:,1], ec='#1F77B4',fc='#28BFFF')
 
-ax.plot(arr_lit[:,0],arr_lit[:,1]/17000,ls='--',c='red',alpha=0.5)
+#ax.plot(arr_lit[:,0],arr_lit[:,1]/17000,ls='--',c='red',alpha=0.5)
 plt.show()
