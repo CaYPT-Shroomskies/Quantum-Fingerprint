@@ -18,11 +18,9 @@ print(slope,intercept)
 def pixel_to_wavelength(pixel):
     return slope * pixel + intercept
 
-# Create points for plotting the line
 pixel_range = np.linspace(pixels.min(), pixels.max(), 100)
 wavelength_fit = pixel_to_wavelength(pixel_range)
 
-# Plot the calibration
 plt.figure(figsize=(10, 6))
 plt.plot(pixel_range, wavelength_fit, 'b-', label=f'Linear fit (y = {slope:.3f}x + {intercept:.1f})')
 plt.plot(pixels, wavelengths, 'ro', label='Measured points',alpha = 0.5)

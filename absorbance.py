@@ -6,11 +6,9 @@ from tkinter import filedialog
 from pathlib import Path
 
 def calculate_absorbance():
-    # Set up tkinter for file selection
     root = tk.Tk()
     root.withdraw()
     
-    # Get both files at once
     files = filedialog.askopenfilenames(
         title='Select SAMPLE and REFERENCE spectra (select 2 files)',
         filetypes=[('CSV files', '*.csv')]
@@ -23,16 +21,12 @@ def calculate_absorbance():
     sample_path, reference_path = files
     
     try:
-        # Read the CSV files
         sample_df = pd.read_csv(sample_path)
         reference_df = pd.read_csv(reference_path)
         
-        # Calculate absorbance: A = -log10(I/I0)
-        # Add small epsilon to prevent log(0)
         epsilon = 1e-10
         absorbance = -np.log10((sample_df['Intensity'] + epsilon) / (reference_df['Intensity'] + epsilon))
         
-        # Create result DataFrame
         result_df = pd.DataFrame({
             'Wavelength': sample_df['Wavelength'],
             'Sample_Intensity': sample_df['Intensity'],
@@ -40,11 +34,9 @@ def calculate_absorbance():
             'Absorbance': absorbance
         })
         
-        # Create plots
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
         fig.suptitle('Absorbance Analysis', fontsize=14)
         
-        # Plot raw spectra
         ax1.plot(sample_df['Wavelength'], sample_df['Intensity'], 'b-', 
                  label=Path(sample_path).stem)
         ax1.plot(reference_df['Wavelength'], reference_df['Intensity'], 'r-', 
@@ -55,23 +47,19 @@ def calculate_absorbance():
         ax1.grid(True, alpha=0.3)
         ax1.legend()
         
-        # Plot absorbance
         ax2.plot(result_df['Wavelength'], result_df['Absorbance'], 'k-')
         ax2.set_xlabel('Wavelength (nm)')
         ax2.set_ylabel('Absorbance')
         ax2.set_title('Absorbance vs Wavelength')
         ax2.grid(True, alpha=0.3)
         
-        # Adjust layout
         plt.tight_layout()
                 
-        # Print some statistics
         print("\nAbsorbance Statistics:")
         print(f"Maximum absorbance: {result_df['Absorbance'].max():.3f}")
         print(f"Minimum absorbance: {result_df['Absorbance'].min():.3f}")
         print(f"Mean absorbance: {result_df['Absorbance'].mean():.3f}")
         
-        # Show the plot
         plt.show()
         
         return result_df

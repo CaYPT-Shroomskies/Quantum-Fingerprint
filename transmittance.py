@@ -6,11 +6,9 @@ from tkinter import filedialog
 from pathlib import Path
 
 def calculate_absorbance():
-    # Set up tkinter for file selection
     root = tk.Tk()
     root.withdraw()
     
-    # Get both files at once
     files = filedialog.askopenfilenames(
         title='Select SAMPLE and REFERENCE spectra (select 2 files)',
         filetypes=[('CSV files', '*.csv')]
@@ -23,30 +21,25 @@ def calculate_absorbance():
     sample_path, reference_path = files
     
     try:
-        # Read the CSV files
         sample_df = pd.read_csv(sample_path)
         reference_df = pd.read_csv(reference_path)
         if np.average(sample_df['Intensity']) > np.average(reference_df['Intensity']):
             print("Invert sample and reference")
             reference_df, sample_df = sample_df, reference_df
             
-        # Calculate transmittance (I/I0)
         epsilon = 1e-10  # Prevent division by zero
         transmittance = sample_df['Intensity'] / (reference_df['Intensity'] + epsilon)
         
         
-        # Create result DataFrame
         result_df = pd.DataFrame({
             'Wavelength': sample_df['Wavelength'],
             'Sample_Intensity': sample_df['Intensity'],
             'Reference_Intensity': reference_df['Intensity'],
             'Transmittance': transmittance,
         })
-        # Create plots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
         fig.suptitle('Spectral Analysis', fontsize=14)
         
-        # Plot raw spectra
         ax1.plot(sample_df['Wavelength'], sample_df['Intensity'], 'b-', 
                  label=Path(sample_path).stem)
         ax1.plot(reference_df['Wavelength'], reference_df['Intensity'], 'r-', 
@@ -57,7 +50,6 @@ def calculate_absorbance():
         ax1.grid(True, alpha=0.3)
         ax1.legend()
         
-        # Plot transmittance
         ax2.plot(result_df['Wavelength'], result_df['Transmittance'], 'g-')
         ax2.set_xlabel('Wavelength (nm)')
         ax2.set_ylabel('Transmittance (I/I₀)')
@@ -65,10 +57,8 @@ def calculate_absorbance():
         ax2.set_title('Transmittance')
         ax2.grid(True, alpha=0.3)
                 
-        # Adjust layout
         plt.tight_layout()
                 
-        # Show the plot
         plt.show()
         
         return result_df
