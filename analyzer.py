@@ -14,7 +14,7 @@ t0 = time.perf_counter()
 
 length = 1920
 height = 1080
-cap = cv2.VideoCapture(0,cv2.CAP_V4L2)
+cap = cv2.VideoCapture(2,cv2.CAP_V4L2)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, length)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
