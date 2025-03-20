@@ -14,7 +14,7 @@ t0 = time.perf_counter()
 
 length = 1920
 height = 1080
-cap = cv2.VideoCapture(2,cv2.CAP_V4L2)
+cap = cv2.VideoCapture(1,cv2.CAP_V4L2)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, length)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -33,11 +33,14 @@ laser_wavenumber = 10000000/532
 max_wave = 4000
 wavenumbers = (10000000/wavelengths) - laser_wavenumber
 
-y1, y2 = int(0.52*height), int(0.65*height)
-rolling = 3
+y1, y2 = int(0.53*height), int(0.64*height)
+rolling = 1
 roll = np.zeros((length, rolling))
 roll_i = 0
 
+# Load dark frame
+dark_frame = pd.read_csv('dark_frame.csv')
+dark_intensities = dark_frame['Intensity'].values
 
 plt.ion()
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -45,23 +48,24 @@ line, = ax.plot([], [], 'k')
 nocorrect, = ax.plot([], [], 'k', alpha=0.5)
 
 ax.set_title('Spectrometer Output')
-ax.set_ylim(0, 100)
-ax.set_xlim(np.min(wavenumbers),np.max(wavenumbers))
-ax.set_xlabel('Wavenumber (1/cm)')
+ax.set_ylim(0, 255)
+ax.set_xlim(np.min(wavelengths),np.max(wavelengths))
+#ax.set_xlim(np.min(wavenumbers),np.max(wavenumbers))
+#ax.set_xlabel('Wavenumber (1/cm)')
 ax.set_ylabel('Intensity (arb.)')
 plt.tight_layout()
 
 def save_spectrum(wavelengths, intensities):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f'spectrum_{timestamp}.csv'
-    
+
     # Create DataFrame with wavelength and intensity data
     df = pd.DataFrame({
         'Wavelength': wavelengths,
         'Wavenumber': wavenumbers,
         'Intensity': intensities
     })
-    
+
     # Save to CSV
     df.to_csv(filename, index=False)
     print(f'Spectrum saved to {filename}')
@@ -80,7 +84,7 @@ def removeFluor(intensities, window_size=10):
     baseline = minimum_filter1d(intensities, window_size, mode='reflect')
     corrected = intensities - baseline
     return np.clip(corrected, 0, None)  # Ensure non-negative values
-    
+
 
 while True:
     _, frame = cap.read()
@@ -92,26 +96,29 @@ while True:
     frame = np.array(frame)
     spectrum = np.mean(frame[y1:y2], axis=(0, 2))
     roll[:, roll_i%rolling] = spectrum
-    
+
     data = np.average(roll, axis=1)
+
+    # Subtract dark frame
+    data = data - dark_intensities
 
     data_noremove = data - np.min(data)
     data = removeFluor(data)
-    
-    line.set_data(wavenumbers, data)
-    nocorrect.set_data(wavenumbers,data_noremove)
+
+    #line.set_data(wavelengths, data)
+    nocorrect.set_data(wavelengths,data_noremove)
 
     plt.pause(0.1)
-    
+
     roll_i += 1
-    
+
     key = cv2.waitKey(10) & 0xFF
     if key == ord('q'):
         break
     elif key == ord('s'):
-        filename = save_spectrum(wavelengths, data)
-        similarity(filename)
-        
+        filename = save_spectrum(wavelengths, data_noremove)
+        #similarity(filename)
+
 
 cap.release()
 cv2.destroyAllWindows()
