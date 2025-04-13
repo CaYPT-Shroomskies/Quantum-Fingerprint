@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import time
-from Main import main as similarity
 import pandas as pd
 from scipy.ndimage import minimum_filter1d  # Added import
 import os
