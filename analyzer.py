@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import time
-from Main import main as similarity
+#from Main import main as similarity
 import pandas as pd
 from scipy.ndimage import minimum_filter1d  # Added import
 
@@ -14,7 +14,7 @@ t0 = time.perf_counter()
 
 length = 1920
 height = 1080
-cap = cv2.VideoCapture(1,cv2.CAP_V4L2)
+cap = cv2.VideoCapture(2,cv2.CAP_V4L2)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, length)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

@@ -66,7 +66,7 @@ def plot_spectra(file_paths=None):
     ax2.legend(loc='upper left')
     
     plt.tight_layout()
-    
+    #plt.yscale('log')
     print("\nSpectrum Statistics:")
     for stats in all_stats:
         print(f"\nFile: {stats['filename']}")
