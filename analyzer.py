@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import time
-#from Main import main as similarity
+
+# from Main import main as similarity
 import pandas as pd
 from scipy.ndimage import minimum_filter1d  # Added import
 
@@ -14,7 +15,7 @@ t0 = time.perf_counter()
 
 length = 1920
 height = 1080
-cap = cv2.VideoCapture(2,cv2.CAP_V4L2)
+cap = cv2.VideoCapture(2, cv2.CAP_V4L2)
 
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, length)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -24,54 +25,54 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 # cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
 # cap.set(cv2.CAP_PROP_EXPOSURE, -4.0)
 
-print("Loaded Camera:",int(1e3* (time.perf_counter()-t0) ),"ms\n")
+print("Loaded Camera:", int(1e3 * (time.perf_counter() - t0)), "ms\n")
 
 # Calibration
 calibrate = [0.5378783977636364, 251.83884117409121]
-wavelengths = (1920/length)*np.arange(length)*calibrate[0] + calibrate[1]
-laser_wavenumber = 10000000/532
+wavelengths = (1920 / length) * np.arange(length) * calibrate[0] + calibrate[1]
+laser_wavenumber = 10000000 / 532
 max_wave = 4000
-wavenumbers = (10000000/wavelengths) - laser_wavenumber
+wavenumbers = (10000000 / wavelengths) - laser_wavenumber
 
-y1, y2 = int(0.53*height), int(0.64*height)
+y1, y2 = int(0.53 * height), int(0.64 * height)
 rolling = 1
 roll = np.zeros((length, rolling))
 roll_i = 0
 
 # Load dark frame
-dark_frame = pd.read_csv('dark_frame.csv')
-dark_intensities = dark_frame['Intensity'].values
+dark_frame = pd.read_csv("dark_frame.csv")
+dark_intensities = dark_frame["Intensity"].values
 
 plt.ion()
 fig, ax = plt.subplots(figsize=(8, 6))
-line, = ax.plot([], [], 'k')
-nocorrect, = ax.plot([], [], 'k', alpha=0.5)
+(line,) = ax.plot([], [], "k")
+(nocorrect,) = ax.plot([], [], "k", alpha=0.5)
 
-ax.set_title('Spectrometer Output')
+ax.set_title("Spectrometer Output")
 ax.set_ylim(0, 255)
-ax.set_xlim(np.min(wavelengths),np.max(wavelengths))
-#ax.set_xlim(np.min(wavenumbers),np.max(wavenumbers))
-#ax.set_xlabel('Wavenumber (1/cm)')
-ax.set_ylabel('Intensity (arb.)')
+ax.set_xlim(np.min(wavelengths), np.max(wavelengths))
+# ax.set_xlim(np.min(wavenumbers),np.max(wavenumbers))
+# ax.set_xlabel('Wavenumber (1/cm)')
+ax.set_ylabel("Intensity (arb.)")
 plt.tight_layout()
 
+
 def save_spectrum(wavelengths, intensities):
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    filename = f'spectrum_{timestamp}.csv'
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"spectrum_{timestamp}.csv"
 
     # Create DataFrame with wavelength and intensity data
-    df = pd.DataFrame({
-        'Wavelength': wavelengths,
-        'Wavenumber': wavenumbers,
-        'Intensity': intensities
-    })
+    df = pd.DataFrame(
+        {"Wavelength": wavelengths, "Wavenumber": wavenumbers, "Intensity": intensities}
+    )
 
     # Save to CSV
     df.to_csv(filename, index=False)
-    print(f'Spectrum saved to {filename}')
+    print(f"Spectrum saved to {filename}")
     return filename
 
-'''
+
+"""
 def removeFluor(frame):
     for i in np.linspace(0,frame.shape[0]-200,int(frame.shape[0]/100)):
         i = int(i)
@@ -79,9 +80,11 @@ def removeFluor(frame):
         batch -= np.min(batch)
         frame[i:(i+100)] = batch
     return frame
-'''
+"""
+
+
 def removeFluor(intensities, window_size=10):
-    baseline = minimum_filter1d(intensities, window_size, mode='reflect')
+    baseline = minimum_filter1d(intensities, window_size, mode="reflect")
     corrected = intensities - baseline
     return np.clip(corrected, 0, None)  # Ensure non-negative values
 
@@ -91,11 +94,11 @@ while True:
     frame = cv2.line(frame, (0, y1), (frame.shape[1], y1), (0, 255, 0), 1)
     frame = cv2.line(frame, (0, y2), (frame.shape[1], y2), (0, 255, 0), 1)
     frame = cv2.flip(frame, 1)
-    cv2.imshow('Image', frame)
+    cv2.imshow("Image", frame)
 
     frame = np.array(frame)
     spectrum = np.mean(frame[y1:y2], axis=(0, 2))
-    roll[:, roll_i%rolling] = spectrum
+    roll[:, roll_i % rolling] = spectrum
 
     data = np.average(roll, axis=1)
 
@@ -105,21 +108,21 @@ while True:
     data_noremove = data - np.min(data)
     data = removeFluor(data)
 
-    #line.set_data(wavelengths, data)
-    nocorrect.set_data(wavelengths,data_noremove)
+    # line.set_data(wavelengths, data)
+    nocorrect.set_data(wavelengths, data_noremove)
 
     plt.pause(0.1)
 
     roll_i += 1
 
     key = cv2.waitKey(10) & 0xFF
-    if key == ord('q'):
+    if key == ord("q"):
         break
-    elif key == ord('s'):
+    elif key == ord("s"):
         filename = save_spectrum(wavelengths, data_noremove)
-        #similarity(filename)
+        # similarity(filename)
 
 
 cap.release()
 cv2.destroyAllWindows()
-plt.close('all')
+plt.close("all")
