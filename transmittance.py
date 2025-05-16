@@ -57,6 +57,7 @@ def calculate_absorbance():
         ax1.set_xlabel("Wavelength (nm)")
         ax1.set_ylabel("Intensity (arb.)")
         ax1.set_title("Raw Spectra")
+        ax1.set_ylim(0,255)
         ax1.grid(True, alpha=0.3)
         ax1.legend()
 
