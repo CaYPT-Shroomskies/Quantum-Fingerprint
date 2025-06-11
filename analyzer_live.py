@@ -1,8 +1,8 @@
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import serial
-from tqdm import tqdm
 
 # Constants
 length = 3648  # Number of pixels
@@ -11,7 +11,7 @@ averages = 4
 baudrate: int = 921600
 timeout: float = 1
 
-'''
+"""
 # Raman
 laser_wavenumber = 10000000 / 532
 max_wave = 4000
@@ -20,7 +20,8 @@ calibrate = np.polyfit(calibrate.reshape(1, -1),1) # obtain calibrate linear fit
 
 wavelengths = np.arange(length) * calibrate[0] + calibrate[1]
 raman_wavenumbers = (10000000 / wavelengths) - laser_wavenumber
-'''
+"""
+
 
 def read_sensor_data_12bpp(ser):
     """
@@ -31,7 +32,7 @@ def read_sensor_data_12bpp(ser):
     packet = bytearray()
     packet.append(0xA1)  # read TCD1304 module (12 bpp, 7296 bytes)
     # packet.append(0xA2)  # read TCD1304 module (8 bpp, 3648 bytes)
-    packet.append(0xB2)  # set integration time (Max D7, min B0)
+    packet.append(0xB8)  # set integration time (Max D7, min B0)
     ser.write(packet)  # Request data
 
     buffer = bytearray()
@@ -40,7 +41,9 @@ def read_sensor_data_12bpp(ser):
 
     while len(buffer) < bytes_expected:
         if time.time() - start_time > timeout_duration:
-            print(f"Timeout reached. Received {len(buffer)} bytes out of {bytes_expected}.")
+            print(
+                f"Timeout reached. Received {len(buffer)} bytes out of {bytes_expected}."
+            )
             break
         if ser.in_waiting > 0:
             buffer += ser.read(ser.in_waiting)
@@ -58,25 +61,23 @@ def read_sensor_data_12bpp(ser):
     return pixel_data
 
 
-def convert_and_plot_12bpp(sensor_data):
+def update_plot_12bpp(sensor_data, line, ax):
     """
-    Plots the 12-bit intensity values from the sensor.
+    Updates the live plot with new 12-bit intensity values from the sensor.
     """
     if len(sensor_data) != length:
-        print(f"Warning: Expected {length} pixels, got {len(sensor_data)}. Plotting available data.")
+        print(
+            f"Warning: Expected {length} pixels, got {len(sensor_data)}. Plotting available data."
+        )
 
-    pixels = np.arange(len(sensor_data))
     sensor_data = 4095 - sensor_data
     sensor_data[0:4] = sensor_data[5]
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(pixels, sensor_data)
-    plt.title("TCD1304 Spectrum (12-bit mode)")
-    plt.xlabel("Pixel")
-    plt.ylabel("Intensity (12-bit)")
-    plt.ylim(0, 4095)
-    plt.grid(True)
-    plt.show()
+    line.set_ydata(sensor_data)
+    ax.relim()
+    ax.autoscale_view()
+    plt.draw()
+    plt.pause(0.01)
 
 
 if __name__ == "__main__":
@@ -84,14 +85,26 @@ if __name__ == "__main__":
     ser = serial.Serial(port_name, baudrate, timeout=timeout)
     print(f"Connected to {port_name}")
 
+    # Set up the live plot
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    pixels = np.arange(length)
+    (line,) = ax.plot(pixels, np.zeros(length))
+    ax.set_title("TCD1304 Spectrum (12-bit mode) - Live Update")
+    ax.set_xlabel("Pixel")
+    ax.set_ylabel("Intensity (12-bit)")
+    ax.set_ylim(0, 4095)
+    ax.grid(True)
+    plt.show()
+
     while True:
         try:
             data = np.zeros(length, dtype=np.float64)
-            for i in tqdm(range(averages)):
+            for i in range(averages):
                 data += read_sensor_data_12bpp(ser)
                 time.sleep(0.2)
             data /= averages
-            convert_and_plot_12bpp(data)
+            update_plot_12bpp(data, line, ax)
         except serial.SerialException as e:
             print(f"Serial port error: {e}")
         except Exception as e:
