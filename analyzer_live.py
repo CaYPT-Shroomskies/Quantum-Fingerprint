@@ -7,7 +7,7 @@ import serial
 # Constants
 length = 3648  # Number of pixels
 bytes_expected = length * 2  # 2 bytes per pixel (12-bit data in 16-bit container)
-averages = 4
+averages = 1
 baudrate: int = 921600
 timeout: float = 1
 
@@ -32,7 +32,7 @@ def read_sensor_data_12bpp(ser):
     packet = bytearray()
     packet.append(0xA1)  # read TCD1304 module (12 bpp, 7296 bytes)
     # packet.append(0xA2)  # read TCD1304 module (8 bpp, 3648 bytes)
-    packet.append(0xB8)  # set integration time (Max D7, min B0)
+    packet.append(0xB4)  # set integration time (Max D7, min B0)
     ser.write(packet)  # Request data
 
     buffer = bytearray()
