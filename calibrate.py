@@ -2,7 +2,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Your data points
-points = np.array([[343, 436.6], [540, 542.2], [549, 546.5], [668, 611.6]])
+points = np.array(
+    [
+        [19, 587.6],
+        [127, 593.4],
+        [262, 599.7],
+        [501, 611.6],
+        [920, 631.6],
+        [962.5, 632.80],
+        [1358, 650.8],
+        [1638, 662.6],
+        [2276, 687.7],
+        [2439, 693.7],
+    ]
+)  # Wavelength pixel pairs
+points += 9.25 - points[5, 0]
 
 # Separate x and y values
 pixels = points[:, 0]

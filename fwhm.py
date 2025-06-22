@@ -3,6 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import serial
+from scipy.optimize import curve_fit
 
 # Constants
 length = 3648  # Number of pixels
@@ -21,6 +22,35 @@ calibrate = np.polyfit(calibrate.reshape(1, -1),1) # obtain calibrate linear fit
 wavelengths = np.arange(length) * calibrate[0] + calibrate[1]
 raman_wavenumbers = (10000000 / wavelengths) - laser_wavenumber
 """
+
+
+def gaussian(x, a, mu, sigma):
+    return a * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+
+
+def find_fwhm(x, y):
+    try:
+        # Initial parameter estimates
+        a0 = np.max(y)
+        mu0 = x[np.argmax(y)]
+        sigma0 = max(8, (x[-1] - x[0]) / 10)  # Prevent too small initial sigma
+
+        # Set bounds to prevent unrealistic fits
+        bounds = (
+            [a0 * 0.5, x[0], 2],  # Lower bounds
+            [a0 * 1.5, x[-1], (x[-1] - x[0])],  # Upper bounds
+        )
+
+        # Fit Gaussian with bounds
+        popt, _ = curve_fit(gaussian, x, y, p0=[a0, mu0, sigma0], bounds=bounds)
+
+        # Calculate FWHM = 2.355 * sigma
+        fwhm = 2.355 * abs(popt[2])
+
+        return fwhm if fwhm > 2 else None, popt
+
+    except Exception:
+        return None, None
 
 
 def read_sensor_data_12bpp(ser):
@@ -73,9 +103,41 @@ def update_plot_12bpp(sensor_data, line, ax):
     sensor_data = 4095 - sensor_data
     sensor_data[0:4] = sensor_data[5]
 
-    line.set_ydata(sensor_data)
-    ax.relim()
-    ax.autoscale_view()
+    # Calculate and print FWHM
+    pixels = np.arange(length)
+    maxima_index = np.argmax(sensor_data)
+    start_index = max(0, int(maxima_index - 10))
+    end_index = min(length, int(maxima_index + 10))
+
+    fwhm, popt = find_fwhm(
+        pixels[start_index:end_index], sensor_data[start_index:end_index]
+    )
+
+    if fwhm is not None:
+        print(f"FWHM: {fwhm:.2f} pixels")
+
+        # Plot data and fit
+        line.set_data(pixels, sensor_data)
+
+        # Plot gaussian fit
+        x_fit = pixels[start_index:end_index]
+        y_fit = gaussian(x_fit, *popt)
+        if not hasattr(ax, "fit_line"):
+            (ax.fit_line,) = ax.plot(x_fit, y_fit, "r--", label="Gaussian fit")
+        else:
+            ax.fit_line.set_data(x_fit, y_fit)
+
+        # Zoom to fit region
+        ax.set_xlim(start_index - 10, end_index + 10)
+        ax.set_ylim(
+            min(sensor_data[start_index:end_index]) * 0.9,
+            max(sensor_data[start_index:end_index]) * 1.1,
+        )
+    else:
+        line.set_ydata(sensor_data)
+        ax.set_xlim(0, length)
+        ax.set_ylim(0, 4095)
+
     plt.draw()
     plt.pause(0.01)
 
