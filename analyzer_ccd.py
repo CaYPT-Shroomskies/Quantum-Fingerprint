@@ -9,9 +9,9 @@ from scipy.ndimage import gaussian_filter
 # Constants
 length = 3694  # Number of pixels (updated per documentation - 7388 bytes / 2)
 
-SH = 240  # integration time in seconds
+SH = 20  # integration time in seconds
 
-ICG = 240  # ICG in seconds
+ICG = 20  # ICG in seconds
 
 SH *= 1e6
 ICG *= 1e6
@@ -19,8 +19,8 @@ balanced = False
 averages = 1
 gaussian_mag = 6
 baudrate: int = 115200
-dark_frame_file = "240_dark_large.csv" # "120_dark_large.csv" # "240_dark_large.csv"  # "240_dark.csv"
-save = True
+dark_frame_file = None #"240_dark_large.csv" # "120_dark_large.csv" # "240_dark_large.csv"  # "240_dark.csv"
+save = False
 save_dark_Frame = False
 
 txfull = np.uint8([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -160,7 +160,7 @@ def convert_and_plot_12bpp(sensor_data, save_csv=False, dark_frame_file=None):
 
 
 if __name__ == "__main__":
-    port_name = "/dev/ttyACM1"
+    port_name = "/dev/ttyACM0"
     while True:
         try:
             ser = serial.Serial(port_name, baudrate)
